@@ -5,11 +5,20 @@
     <meta charset="UTF-8">
     <title>Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.body.className = savedTheme;
+            });
+        } else {
+            document.body.className = savedTheme;
+        }
+    </script>
+    <script src="theme.js"></script>
 </head>
 
-<body class="light">
-
-<button class="toggle" onclick="toggleMode()">Light/Dark</button>
+<body>
 
 <header>Dashboard</header>
 
@@ -36,11 +45,6 @@
 
 <script>
 loadChart("AAPL");
-
-function toggleMode() {
-    document.body.classList.toggle("dark");
-    document.body.classList.toggle("light");
-}
 </script>
 
 </body>

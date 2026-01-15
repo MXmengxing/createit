@@ -5,6 +5,10 @@ body {
     transition: 0.3s;
 }
 
+element.light {
+    background-color: none;
+}
+
 /* Light mode */
 body.light {
     background: #ffffff;

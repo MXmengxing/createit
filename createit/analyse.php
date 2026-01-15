@@ -6,11 +6,20 @@
     <title>Interactieve Analyse</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <script>
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.body.className = savedTheme;
+            });
+        } else {
+            document.body.className = savedTheme;
+        }
+    </script>
+    <script src="theme.js"></script>
 </head>
 
-<body class="light">
-
-<button class="toggle" onclick="toggleMode()">Light/Dark</button>
+<body>
 
 <header>Interactieve Analyse</header>
 
@@ -147,12 +156,6 @@ function recalcScenario() {
 
     document.getElementById("y2net").value = (y2rev - y2cost).toFixed(0);
     document.getElementById("y3net").value = (y3rev - y3cost).toFixed(0);
-}
-
-// Light / Dark 切换
-function toggleMode() {
-    document.body.classList.toggle("dark");
-    document.body.classList.toggle("light");
 }
 
 // 监听用户输入，实时更新 Net Income

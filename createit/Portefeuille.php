@@ -5,11 +5,21 @@
     <meta charset="UTF-8">
     <title>Portefeuille</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.style.backgroundColor = savedTheme === "dark" ? "#000000" : "#ffffff";
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.body.className = savedTheme;
+            });
+        } else {
+            document.body.className = savedTheme;
+        }
+    </script>
+    <script src="theme.js"></script>
 </head>
 
-<body class="light">
-
-<button class="toggle" onclick="toggleMode()">Light/Dark</button>
+<body>
 
 <header>Portefeuille</header>
 
@@ -52,11 +62,6 @@ async function loadPortfolio() {
 }
 
 loadPortfolio();
-
-function toggleMode() {
-    document.body.classList.toggle("dark");
-    document.body.classList.toggle("light");
-}
 </script>
 
 </body>
