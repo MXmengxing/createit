@@ -33,11 +33,7 @@
     <div class="card selector-card">
         <label for="companySelect"><strong>Selecteer een bedrijf</strong></label>
         <select id="companySelect">
-            <option value="AAPL">Apple (AAPL)</option>
-            <option value="MSFT">Microsoft (MSFT)</option>
-            <option value="AMZN">Amazon (AMZN)</option>
-            <option value="TSLA">Tesla (TSLA)</option>
-            <option value="NVDA">Nvidia (NVDA)</option>
+            <option value="">Loading...</option>
         </select>
         <small>Jaar 1 cijfers worden automatisch via de API geladen.</small>
     </div>
@@ -108,46 +104,104 @@
 </main>
 
 <script>
-// 载入 Jaar 1（API Data）
-async function loadYear1() {
-    const symbol = document.getElementById("companySelect").value;
+// Global cache for all intraday data
+let allSymbolsData = {};
 
+// Load all company data on page start
+async function loadAllData() {
     try {
-        const res = await fetch("analysis_api.php?symbol=" + encodeURIComponent(symbol));
+        const res = await fetch("intraday_data.php");
         const data = await res.json();
-
-        if (data.error) {
-            alert("API fout: " + (data.msg || "Onbekende fout"));
-            return;
+        allSymbolsData = data.data;
+        
+        // Populate dropdown with symbols
+        const select = document.getElementById("companySelect");
+        select.innerHTML = "";
+        
+        const companyNames = {
+            'AAPL': 'Apple',
+            'MSFT': 'Microsoft',
+            'GOOGL': 'Google',
+            'AMZN': 'Amazon',
+            'NVDA': 'NVIDIA',
+            'TSLA': 'Tesla',
+            'META': 'Meta',
+            'IBM': 'IBM',
+            'INTC': 'Intel',
+            'AMD': 'AMD',
+            'ASML': 'ASML',
+            'JPM': 'JPMorgan',
+            'V': 'Visa',
+            'JNJ': 'Johnson & Johnson',
+            'KO': 'Coca-Cola',
+            'PG': 'Procter & Gamble',
+            'NFLX': 'Netflix',
+            'DIS': 'Disney',
+            'CSCO': 'Cisco',
+            'BA': 'Boeing'
+        };
+        
+        data.symbols.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.symbol;
+            const name = companyNames[item.symbol] || item.symbol;
+            option.textContent = `${item.symbol} - ${name}`;
+            select.appendChild(option);
+        });
+        
+        // Load analysis for first symbol
+        if (data.symbols.length > 0) {
+            loadYear1();
         }
-
-        // 填 Jaar 1
-        document.getElementById("y1rev").value  = data.revenue ?? 0;
-        document.getElementById("y1cost").value = data.cost ?? 0;
-        document.getElementById("y1net").value  = data.net ?? 0;
-
-        // 给 Jaar 2 / 3 一个初始 scenario（简单：收入增加 5% / 10%，成本比例相同）
-        const y1rev  = Number(data.revenue || 0);
-        const y1cost = Number(data.cost || 0);
-        const costRatio = y1rev ? y1cost / y1rev : 0.6;
-
-        const y2rev = y1rev * 1.05;
-        const y3rev = y1rev * 1.10;
-
-        document.getElementById("y2rev").value = y2rev.toFixed(0);
-        document.getElementById("y3rev").value = y3rev.toFixed(0);
-
-        document.getElementById("y2cost").value = (y2rev * costRatio).toFixed(0);
-        document.getElementById("y3cost").value = (y3rev * costRatio).toFixed(0);
-
-        recalcScenario();
     } catch (e) {
-        console.error(e);
-        alert("API fout bij laden van Jaar 1");
+        console.error("Error loading all data:", e);
+        // Fallback
+        document.getElementById("companySelect").innerHTML = '<option value="AAPL">AAPL - Apple</option>';
+        loadYear1();
     }
 }
 
-// 根据 Jaar 2 / 3 的 Revenue & Cost 自动算 Net Income
+// Load Jaar 1 (Year 1) from cached data - use current price as base
+function loadYear1() {
+    const symbol = document.getElementById("companySelect").value;
+    
+    if (!symbol || !allSymbolsData[symbol]) {
+        console.error("Symbol not found in cache:", symbol);
+        return;
+    }
+    
+    const company = allSymbolsData[symbol];
+    const currentPrice = company.price || 200;
+    
+    // Year 1: Use current price to calculate revenue base
+    // Assume 1 million units * current price = revenue
+    const y1rev = currentPrice * 1000000;  // 1M units
+    const y1cost = y1rev * 0.6;  // 60% cost ratio
+    const y1net = y1rev - y1cost;  // 40% net margin
+    
+    // Fill Year 1 fields
+    document.getElementById("y1rev").value = y1rev.toFixed(0);
+    document.getElementById("y1cost").value = y1cost.toFixed(0);
+    document.getElementById("y1net").value = y1net.toFixed(0);
+    
+    // Calculate scenarios for Year 2 & 3
+    // Year 2: 5% growth
+    const y2rev = y1rev * 1.05;
+    const y2cost = y2rev * 0.6;
+    
+    // Year 3: 10% growth
+    const y3rev = y1rev * 1.10;
+    const y3cost = y3rev * 0.6;
+    
+    document.getElementById("y2rev").value = y2rev.toFixed(0);
+    document.getElementById("y2cost").value = y2cost.toFixed(0);
+    document.getElementById("y3rev").value = y3rev.toFixed(0);
+    document.getElementById("y3cost").value = y3cost.toFixed(0);
+    
+    recalcScenario();
+}
+
+// Calculate Net Income based on Revenue & Cost (auto-calculate)
 function recalcScenario() {
     const y2rev  = Number(document.getElementById("y2rev").value || 0);
     const y2cost = Number(document.getElementById("y2cost").value || 0);
@@ -158,17 +212,22 @@ function recalcScenario() {
     document.getElementById("y3net").value = (y3rev - y3cost).toFixed(0);
 }
 
-// 监听用户输入，实时更新 Net Income
+// Listen to user input and update Net Income in real-time
 ["y2rev","y2cost","y3rev","y3cost"].forEach(id => {
     const el = document.getElementById(id);
-    el.addEventListener("input", recalcScenario);
+    if (el) {
+        el.addEventListener("input", recalcScenario);
+    }
 });
 
-// 切换公司时重新加载 Jaar 1
-document.getElementById("companySelect").addEventListener("change", loadYear1);
+// Change company when dropdown changes
+const companySelect = document.getElementById("companySelect");
+if (companySelect) {
+    companySelect.addEventListener("change", loadYear1);
+}
 
-// 初次加载（默认 Apple）
-loadYear1();
+// Load all data when page starts
+loadAllData();
 </script>
 
 </body>

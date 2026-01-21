@@ -53,14 +53,30 @@
 </main>
 
 <script>
+// Load portfolio value from cached intraday data
 async function loadPortfolio() {
-    const res = await fetch("portfolio_data.php");
-    const data = await res.json();
-
-    document.getElementById("totalValue").innerText =
-        "€" + data.total.toFixed(2);
+    try {
+        const res = await fetch("intraday_data.php");
+        const data = await res.json();
+        
+        // Calculate total portfolio value
+        // Assume 10 shares of each company for demo purposes
+        let totalValue = 0;
+        
+        if (data.symbols && data.symbols.length > 0) {
+            data.symbols.forEach(item => {
+                totalValue += item.price * 10;  // 10 shares per company
+            });
+        }
+        
+        document.getElementById("totalValue").innerText = "€" + totalValue.toFixed(2);
+    } catch (e) {
+        console.error("Error loading portfolio:", e);
+        document.getElementById("totalValue").innerText = "Error loading data";
+    }
 }
 
+// Load portfolio on page start
 loadPortfolio();
 </script>
 

@@ -1,8 +1,11 @@
 <?php
 // api.php
-// Demo API - Returns mock financial data for demonstration
+// Demo API with Real Data Fallback - Uses Alpha Vantage free API with mock data fallback
 
-// Mock company data
+// Alpha Vantage API Key (provided by user)
+$ALPHA_VANTAGE_KEY = "MJPEXPP7Q96ULP0F";
+
+// Mock company data (fallback)
 $MOCK_DATA = [
     "AAPL" => [
         "name" => "Apple Inc.",
@@ -60,6 +63,22 @@ $MOCK_DATA = [
     ]
 ];
 
+function fetchRealData($url) {
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 5,
+            'user_agent' => 'Mozilla/5.0'
+        ],
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false
+        ]
+    ]);
+    
+    $json = @file_get_contents($url, false, $context);
+    return json_decode($json, true);
+}
+
 function generateHistoricalPrices($symbol, $basePrice) {
     $prices = [];
     $currentPrice = $basePrice;
@@ -83,7 +102,7 @@ function generateHistoricalPrices($symbol, $basePrice) {
 }
 
 function api(string $endpoint) {
-    global $MOCK_DATA;
+    global $MOCK_DATA, $ALPHA_VANTAGE_KEY;
     
     // Parse the endpoint
     if (strpos($endpoint, "income-statement") !== false) {
@@ -111,6 +130,57 @@ function api(string $endpoint) {
         $symbol = $matches[1] ?? "AAPL";
         $symbol = strtoupper($symbol);
         
+        // Try real API first with INTRADAY data (5min interval for real-time)
+        $realUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=$symbol&interval=60min&outputsize=full&apikey=$ALPHA_VANTAGE_KEY";
+        $realData = fetchRealData($realUrl);
+        
+        if ($realData && isset($realData['Time Series (60min)'])) {
+            $timeSeries = $realData['Time Series (60min)'];
+            $prices = [];
+            $dates = [];
+            $count = 0;
+            
+            foreach ($timeSeries as $date => $data) {
+                if ($count >= 100) break;
+                $prices[] = (float)$data['4. close'];
+                $dates[] = $date;
+                $count++;
+            }
+            
+            return [
+                "symbol" => $symbol,
+                "historical" => array_map(function($d, $p) {
+                    return ["date" => $d, "close" => $p];
+                }, $dates, $prices)
+            ];
+        }
+        
+        // Fallback to daily data
+        $realUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=$symbol&outputsize=full&apikey=$ALPHA_VANTAGE_KEY";
+        $realData = fetchRealData($realUrl);
+        
+        if ($realData && isset($realData['Time Series (Daily)'])) {
+            $timeSeries = $realData['Time Series (Daily)'];
+            $prices = [];
+            $dates = [];
+            $count = 0;
+            
+            foreach ($timeSeries as $date => $data) {
+                if ($count >= 100) break;
+                $prices[] = (float)$data['4. close'];
+                $dates[] = $date;
+                $count++;
+            }
+            
+            return [
+                "symbol" => $symbol,
+                "historical" => array_map(function($d, $p) {
+                    return ["date" => $d, "close" => $p];
+                }, $dates, $prices)
+            ];
+        }
+        
+        // Fallback to mock data
         if (!isset($MOCK_DATA[$symbol])) {
             return ["error" => true, "msg" => "Symbol not found"];
         }
@@ -128,6 +198,21 @@ function api(string $endpoint) {
         $symbol = $matches[1] ?? "AAPL";
         $symbol = strtoupper($symbol);
         
+        // Try real API first (Alpha Vantage)
+        $realUrl = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=$symbol&apikey=$ALPHA_VANTAGE_KEY";
+        $realData = fetchRealData($realUrl);
+        
+        if ($realData && isset($realData['Global Quote']) && isset($realData['Global Quote']['05. price'])) {
+            $quote = $realData['Global Quote'];
+            return [[
+                "symbol" => $symbol,
+                "price" => (float)$quote['05. price'],
+                "pe" => (float)($quote['10. pe ratio'] ?? 0),
+                "marketCap" => (float)($quote['09. marketCap'] ?? 0)
+            ]];
+        }
+        
+        // Fallback to mock data
         if (!isset($MOCK_DATA[$symbol])) {
             return [["error" => true, "msg" => "Symbol not found"]];
         }
