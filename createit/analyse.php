@@ -59,7 +59,6 @@
         <p>Pas cijfers aan en bekijk voorspellingen per bedrijf</p>
     </div>
 
-    <!-- Bedrijf选择 + 说明 -->
     <div class="card selector-card">
         <label for="companySelect"><strong>Selecteer een bedrijf</strong></label>
         <select id="companySelect">
@@ -70,7 +69,6 @@
 
     <div class="container analyse-cards">
 
-        <!-- Jaar 1：只读，来自 API -->
         <div class="card analyse-card">
             <h3>Jaar 1 (API data)</h3>
 
@@ -90,7 +88,6 @@
             </div>
         </div>
 
-        <!-- Jaar 2：用户改 revenue/cost，净利润自动 -->
         <div class="card analyse-card">
             <h3>Jaar 2 (scenario)</h3>
 
@@ -110,7 +107,6 @@
             </div>
         </div>
 
-        <!-- Jaar 3：同上 -->
         <div class="card analyse-card">
             <h3>Jaar 3 (scenario)</h3>
 

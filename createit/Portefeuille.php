@@ -53,7 +53,6 @@
 <script>
 let chartInstance = null;
 
-// Demo: 每个股票 10 股（你以后可以改成真实持仓）
 const SHARES_PER_SYMBOL = 10;
 
 async function loadPortfolio() {
@@ -64,7 +63,6 @@ async function loadPortfolio() {
         const data = await res.json();
         const list = data.symbols || [];
 
-        // 计算总价值 + 准备图表数据
         let totalValue = 0;
         const labels = [];
         const values = [];
@@ -79,14 +77,11 @@ async function loadPortfolio() {
             totalValue += positionValue;
         });
 
-        // 显示总资产
         document.getElementById("totalValue").innerText = "€" + totalValue.toFixed(2);
 
-        // 画图
         const canvas = document.getElementById("portfolioChart");
         if (!canvas) return;
 
-        // 防止重复创建
         if (chartInstance) chartInstance.destroy();
 
         chartInstance = new Chart(canvas, {
@@ -120,7 +115,6 @@ async function loadPortfolio() {
         console.error("Error loading portfolio:", e);
         document.getElementById("totalValue").innerText = "Error loading data";
 
-        // 如果图表也需要提示
         const canvas = document.getElementById("portfolioChart");
         if (canvas) {
             const ctx = canvas.getContext("2d");
