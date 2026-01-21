@@ -17,7 +17,37 @@
         }
     </script>
     <script src="theme.js"></script>
-</head>
+    <style>
+        select {
+            padding: 12px 15px; 
+            font-size: 1em; 
+            border-radius: 6px; 
+            border: 2px solid #667eea;
+            background: white;
+            cursor: pointer;
+            min-width: 250px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        select:hover {
+            border-color: #764ba2;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        select:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .selector-card {
+            margin-bottom: 20px;
+        }
+        .selector-card small {
+            display: block;
+            margin-top: 8px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
 
 <body>
 
