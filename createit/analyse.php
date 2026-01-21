@@ -42,7 +42,7 @@
 
         <!-- Jaar 1：只读，来自 API -->
         <div class="card analyse-card">
-            <h3>Jaar 1 (Huidig)</h3>
+            <h3>Jaar 1 (API data)</h3>
 
             <div class="row-line">
                 <label for="y1rev">Revenue</label>
@@ -58,16 +58,11 @@
                 <label for="y1net">Net Income</label>
                 <input id="y1net" type="number" disabled>
             </div>
-
-            <div class="row-line">
-                <label for="y1margin">Margin %</label>
-                <input id="y1margin" type="text" disabled>
-            </div>
         </div>
 
         <!-- Jaar 2：用户改 revenue/cost，净利润自动 -->
         <div class="card analyse-card">
-            <h3>Jaar 2 (Scenario 5%)</h3>
+            <h3>Jaar 2 (scenario)</h3>
 
             <div class="row-line">
                 <label for="y2rev">Revenue</label>
@@ -83,16 +78,11 @@
                 <label for="y2net">Net Income (auto)</label>
                 <input id="y2net" type="number" disabled>
             </div>
-
-            <div class="row-line">
-                <label for="y2margin">Margin %</label>
-                <input id="y2margin" type="text" disabled>
-            </div>
         </div>
 
         <!-- Jaar 3：同上 -->
         <div class="card analyse-card">
-            <h3>Jaar 3 (Scenario 10%)</h3>
+            <h3>Jaar 3 (scenario)</h3>
 
             <div class="row-line">
                 <label for="y3rev">Revenue</label>
@@ -108,18 +98,13 @@
                 <label for="y3net">Net Income (auto)</label>
                 <input id="y3net" type="number" disabled>
             </div>
-
-            <div class="row-line">
-                <label for="y3margin">Margin %</label>
-                <input id="y3margin" type="text" disabled>
-            </div>
         </div>
 
     </div>
 </main>
 
 <script>
-// Global cache for intraday data
+// Global cache for all intraday data
 let allSymbolsData = {};
 
 // Load all company data on page start
@@ -127,130 +112,122 @@ async function loadAllData() {
     try {
         const res = await fetch("intraday_data.php");
         const data = await res.json();
-        
-        if (!data.data || !data.symbols) {
-            console.error("Invalid data from intraday_data.php");
-            return;
-        }
-        
         allSymbolsData = data.data;
         
+        // Populate dropdown with symbols
         const select = document.getElementById("companySelect");
         select.innerHTML = "";
         
         const companyNames = {
-            'AAPL': 'Apple', 'MSFT': 'Microsoft', 'GOOGL': 'Google', 'AMZN': 'Amazon',
-            'NVDA': 'NVIDIA', 'TSLA': 'Tesla', 'META': 'Meta', 'IBM': 'IBM',
-            'INTC': 'Intel', 'AMD': 'AMD', 'ASML': 'ASML', 'JPM': 'JPMorgan',
-            'V': 'Visa', 'JNJ': 'J&J', 'KO': 'Coca-Cola', 'PG': 'P&G',
-            'NFLX': 'Netflix', 'DIS': 'Disney', 'CSCO': 'Cisco', 'BA': 'Boeing'
+            'AAPL': 'Apple',
+            'MSFT': 'Microsoft',
+            'GOOGL': 'Google',
+            'AMZN': 'Amazon',
+            'NVDA': 'NVIDIA',
+            'TSLA': 'Tesla',
+            'META': 'Meta',
+            'IBM': 'IBM',
+            'INTC': 'Intel',
+            'AMD': 'AMD',
+            'ASML': 'ASML',
+            'JPM': 'JPMorgan',
+            'V': 'Visa',
+            'JNJ': 'Johnson & Johnson',
+            'KO': 'Coca-Cola',
+            'PG': 'Procter & Gamble',
+            'NFLX': 'Netflix',
+            'DIS': 'Disney',
+            'CSCO': 'Cisco',
+            'BA': 'Boeing'
         };
         
         data.symbols.forEach(item => {
             const option = document.createElement("option");
             option.value = item.symbol;
             const name = companyNames[item.symbol] || item.symbol;
-            option.textContent = `${item.symbol} - ${name} ($${item.price.toFixed(2)})`;
+            option.textContent = `${item.symbol} - ${name}`;
             select.appendChild(option);
         });
         
-        // Load first company
+        // Load analysis for first symbol
         if (data.symbols.length > 0) {
-            select.value = data.symbols[0].symbol;
             loadYear1();
         }
-    } catch (error) {
-        console.error("Error loading data:", error);
+    } catch (e) {
+        console.error("Error loading all data:", e);
+        // Fallback
+        document.getElementById("companySelect").innerHTML = '<option value="AAPL">AAPL - Apple</option>';
+        loadYear1();
     }
 }
 
-// Load Jaar 1 from cached data
+// Load Jaar 1 (Year 1) from cached data - use current price as base
 function loadYear1() {
     const symbol = document.getElementById("companySelect").value;
     
     if (!symbol || !allSymbolsData[symbol]) {
-        console.error("Symbol not found:", symbol);
+        console.error("Symbol not found in cache:", symbol);
         return;
     }
     
     const company = allSymbolsData[symbol];
-    const currentPrice = parseFloat(company.price) || 200;
+    const currentPrice = company.price || 200;
     
-    // Year 1: Current state based on price
-    const y1rev = currentPrice * 1000000;  // 1M units × price
-    const y1cost = y1rev * 0.60;           // 60% cost ratio
-    const y1net = y1rev - y1cost;          // 40% net margin
-    const y1margin = ((y1net / y1rev) * 100).toFixed(1);
+    // Year 1: Use current price to calculate revenue base
+    // Assume 1 million units * current price = revenue
+    const y1rev = currentPrice * 1000000;  // 1M units
+    const y1cost = y1rev * 0.6;  // 60% cost ratio
+    const y1net = y1rev - y1cost;  // 40% net margin
     
+    // Fill Year 1 fields
     document.getElementById("y1rev").value = y1rev.toFixed(0);
     document.getElementById("y1cost").value = y1cost.toFixed(0);
     document.getElementById("y1net").value = y1net.toFixed(0);
-    document.getElementById("y1margin").value = y1margin + "%";
     
-    // Year 2: 5% revenue growth
+    // Calculate scenarios for Year 2 & 3
+    // Year 2: 5% growth
     const y2rev = y1rev * 1.05;
-    const y2cost = y2rev * 0.60;
-    const y2net = y2rev - y2cost;
-    const y2margin = ((y2net / y2rev) * 100).toFixed(1);
+    const y2cost = y2rev * 0.6;
+    
+    // Year 3: 10% growth
+    const y3rev = y1rev * 1.10;
+    const y3cost = y3rev * 0.6;
     
     document.getElementById("y2rev").value = y2rev.toFixed(0);
     document.getElementById("y2cost").value = y2cost.toFixed(0);
-    document.getElementById("y2net").value = y2net.toFixed(0);
-    document.getElementById("y2margin").value = y2margin + "%";
-    
-    // Year 3: 10% revenue growth
-    const y3rev = y1rev * 1.10;
-    const y3cost = y3rev * 0.60;
-    const y3net = y3rev - y3cost;
-    const y3margin = ((y3net / y3rev) * 100).toFixed(1);
-    
     document.getElementById("y3rev").value = y3rev.toFixed(0);
     document.getElementById("y3cost").value = y3cost.toFixed(0);
-    document.getElementById("y3net").value = y3net.toFixed(0);
-    document.getElementById("y3margin").value = y3margin + "%";
+    
+    recalcScenario();
 }
 
-// Recalculate on user input
+// Calculate Net Income based on Revenue & Cost (auto-calculate)
 function recalcScenario() {
-    // Year 2
-    const y2rev = parseFloat(document.getElementById("y2rev").value) || 0;
-    const y2cost = parseFloat(document.getElementById("y2cost").value) || 0;
-    const y2net = y2rev - y2cost;
-    const y2margin = y2rev > 0 ? ((y2net / y2rev) * 100).toFixed(1) : 0;
-    
-    document.getElementById("y2net").value = y2net.toFixed(0);
-    document.getElementById("y2margin").value = y2margin + "%";
-    
-    // Year 3
-    const y3rev = parseFloat(document.getElementById("y3rev").value) || 0;
-    const y3cost = parseFloat(document.getElementById("y3cost").value) || 0;
-    const y3net = y3rev - y3cost;
-    const y3margin = y3rev > 0 ? ((y3net / y3rev) * 100).toFixed(1) : 0;
-    
-    document.getElementById("y3net").value = y3net.toFixed(0);
-    document.getElementById("y3margin").value = y3margin + "%";
+    const y2rev  = Number(document.getElementById("y2rev").value || 0);
+    const y2cost = Number(document.getElementById("y2cost").value || 0);
+    const y3rev  = Number(document.getElementById("y3rev").value || 0);
+    const y3cost = Number(document.getElementById("y3cost").value || 0);
+
+    document.getElementById("y2net").value = (y2rev - y2cost).toFixed(0);
+    document.getElementById("y3net").value = (y3rev - y3cost).toFixed(0);
 }
 
-// Add listeners for user input
-["y2rev", "y2cost", "y3rev", "y3cost"].forEach(id => {
+// Listen to user input and update Net Income in real-time
+["y2rev","y2cost","y3rev","y3cost"].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
         el.addEventListener("input", recalcScenario);
     }
 });
 
-// Change on company select
-const select = document.getElementById("companySelect");
-if (select) {
-    select.addEventListener("change", loadYear1);
+// Change company when dropdown changes
+const companySelect = document.getElementById("companySelect");
+if (companySelect) {
+    companySelect.addEventListener("change", loadYear1);
 }
 
-// Load on page ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadAllData);
-} else {
-    loadAllData();
-}
+// Load all data when page starts
+loadAllData();
 </script>
 
 </body>
