@@ -79,9 +79,12 @@ foreach ($symbols as $symbol) {
         // Reverse to get oldest-to-newest order
         $historical = array_reverse($historical);
         
+        // Get the LAST (newest) price from historical data
+        $currentPrice = end($historical)['close'];
+        
         $result['data'][$symbol] = [
             'symbol' => $symbol,
-            'price' => $latestPrice,
+            'price' => $currentPrice,
             'historical' => $historical,
             'lastRefreshed' => $latestTime,
             'interval' => '5min'

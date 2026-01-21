@@ -3,7 +3,7 @@
 // Demo API with Real Data Fallback - Uses Alpha Vantage free API with mock data fallback
 
 // Alpha Vantage API Key (provided by user)
-$ALPHA_VANTAGE_KEY = "MJPEXPP7Q96ULP0F";
+$ALPHA_VANTAGE_KEY = "CY38YFUBBJR352YA";
 
 // Mock company data (fallback)
 $MOCK_DATA = [

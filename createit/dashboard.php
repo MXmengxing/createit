@@ -206,7 +206,7 @@ async function loadAllData() {
             const option = document.createElement("option");
             option.value = item.symbol;
             const name = companyNames[item.symbol] || item.symbol;
-            option.textContent = `${item.symbol} - ${name} ($${item.price.toFixed(2)})`;
+            option.textContent = `${item.symbol} - ${name}`;
             select.appendChild(option);
         });
         
